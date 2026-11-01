@@ -5,13 +5,12 @@ const API = "https://api.elevenlabs.io/v1";
 
 // Hand-picked from the ElevenLabs library: young Indian women who handle Hindi, English and Hinglish.
 export const VOICES = [
-  { id: "EHeVIpHOvJGuhp2QcMZZ", name: "Pyaari", note: "Easy, friendly Hinglish. Our default." },
-  { id: "KiyhWeX8ertYnl678VkL", name: "Chandni", note: "Cute and patient, repeats back before booking." },
-  { id: "IzQxb6JkxyJg77HNbm6b", name: "Anjura", note: "Bright and warm, good for busy front desks." },
-  { id: "cVCsnHwp2N6T6knBBlSd", name: "Tripti", note: "Calm and professional, clinics and banks." },
-  { id: "5pmEsALT3A7WzePUT1r6", name: "Kanika", note: "Natural pauses, sounds like a real person." },
-  { id: "LZOmv8tnIt32q9IdMoi9", name: "Rhea", note: "Energetic, clear on the phone." },
-  { id: "oR3MB6ZZsjdV90ztz1xE", name: "Paaro", note: "Unhurried and textured." },
+  { id: "KYiVPerWcenyBTIvWbfY", name: "Sia", note: "Sweet, warm and reassuring. Our default." },
+  { id: "9w21nMuk8CWXIME31V1S", name: "Simran", note: "Young, friendly and calm." },
+  { id: "gHu9GtaHOXcSqFTK06ux", name: "Anjali", note: "Soft and cheerful, very soothing." },
+  { id: "k2intd1ORm0YUH8etnXg", name: "Zara", note: "Light and sweet, like a friend." },
+  { id: "DpnM70iDHNHZ0Mguv6GJ", name: "Saavi", note: "Empathetic, made for Hindi customer care." },
+  { id: "EHeVIpHOvJGuhp2QcMZZ", name: "Pyaari", note: "Easy, friendly Hinglish." },
 ] as const;
 
 export function isKnownVoice(id: string) {

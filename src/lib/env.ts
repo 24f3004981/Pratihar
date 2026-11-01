@@ -3,10 +3,10 @@ const read = (k: string) => (process.env[k] ?? "").trim();
 
 export const env = {
   geminiKey: read("GEMINI_API_KEY"),
-  geminiModel: read("GEMINI_MODEL") || "gemini-3.5-flash",
+  geminiModel: read("GEMINI_MODEL") || "gemini-3.5-flash-lite",
   elevenKey: read("ELEVENLABS_API_KEY"),
   elevenWebhookSecret: read("ELEVENLABS_WEBHOOK_SECRET"),
-  defaultVoice: read("ELEVENLABS_VOICE_ID") || "EHeVIpHOvJGuhp2QcMZZ",
+  defaultVoice: read("ELEVENLABS_VOICE_ID") || "KYiVPerWcenyBTIvWbfY",
   mongoUri: read("MONGODB_URI"),
   mongoDb: read("MONGODB_DB") || "pratihar",
   tigerUrl: read("TIGER_DATABASE_URL"),

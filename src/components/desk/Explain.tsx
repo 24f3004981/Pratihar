@@ -105,6 +105,8 @@ export default function Explain({ data, reload, go }: TabProps) {
         }
         continue;
       }
+      // "hmm", "um", "हम्म" alone is thinking aloud, not an answer: keep listening
+      if (/^(h+m+|u+m+|u+h+|a+h+|हम+्?म*|हं+|अं+|उम+्?म*)[\s।.,!?]*$/iu.test(said)) continue;
       quiet = 0;
       setHeard(said);
       const r = await send(said);

@@ -7,7 +7,7 @@ const FAST = { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } };
 
 // If the chosen model is busy or retired, try these in order. All are on the key's model list and
 // answered a receptionist-style prompt in under 3 s when timed (scripts/time-models.ts).
-const FALLBACKS = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"];
+const FALLBACKS = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 let client: GoogleGenAI | null = null;
 export function gemini(): GoogleGenAI {
@@ -37,12 +37,13 @@ async function generate(contents: Content[] | string, config: GenerateContentCon
   let last: unknown;
   for (const model of models) {
     try {
-      return await gemini().models.generateContent({ model, contents, config: { ...FAST, ...config } });
+      // a stuck model must not hold a live conversation: give up after 6 s and try the next one
+      return await gemini().models.generateContent({ model, contents, config: { ...FAST, abortSignal: AbortSignal.timeout(6000), ...config } });
     } catch (e) {
       last = e;
-      const s = statusOf(e);
+      const s = (e as Error)?.name === "AbortError" || (e as Error)?.name === "TimeoutError" ? 503 : statusOf(e);
       if (![404, 429, 500, 503].includes(s)) throw e;
-      coolUntil.set(model, Date.now() + (s === 404 ? 3_600_000 : s === 429 ? 60_000 : 30_000));
+      coolUntil.set(model, Date.now() + (s === 404 ? 3_600_000 : s === 429 ? 600_000 : 30_000));
       console.warn(`[gemini] ${model} returned ${s}; using the next model`);
     }
   }
