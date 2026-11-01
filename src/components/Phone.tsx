@@ -114,7 +114,7 @@ export default function Phone({ businessId, practice = false, channel = "web" }:
       setPhase("listening");
       let said = "";
       try {
-        said = (await v.listen({ pauseMs: 1100, waitMs: 10000 })).trim();
+        said = (await v.listen({ pauseMs: 900, waitMs: 10000 })).trim();
       } catch (e) {
         setErr((e as Error).message);
       }

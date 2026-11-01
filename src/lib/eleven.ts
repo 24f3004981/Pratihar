@@ -19,7 +19,7 @@ export function isKnownVoice(id: string) {
 }
 
 export async function tts(text: string, voiceId: string): Promise<Response> {
-  const res = await fetch(`${API}/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+  const res = await fetch(`${API}/text-to-speech/${encodeURIComponent(voiceId)}/stream?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": need(env.elevenKey, "ELEVENLABS_API_KEY"), "content-type": "application/json" },
     body: JSON.stringify({
@@ -33,10 +33,14 @@ export async function tts(text: string, voiceId: string): Promise<Response> {
   return res;
 }
 
-export async function stt(audio: Blob): Promise<{ text: string; language: string }> {
+export async function stt(audio: Blob, lang?: string): Promise<{ text: string; language: string }> {
   const form = new FormData();
   form.append("model_id", "scribe_v1");
   form.append("file", audio, "speech.webm");
+  form.append("tag_audio_events", "false");
+  // a hint stops Hindi speech being forced into English words; Hinglish speakers are mostly Hindi phonetically
+  if (lang === "en") form.append("language_code", "eng");
+  else if (lang === "hi" || lang === "hinglish") form.append("language_code", "hin");
   const res = await fetch(`${API}/speech-to-text`, {
     method: "POST",
     headers: { "xi-api-key": need(env.elevenKey, "ELEVENLABS_API_KEY") },

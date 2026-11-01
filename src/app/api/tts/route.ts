@@ -27,3 +27,17 @@ export const POST = route(async (req: Request) => {
   }
   return new Response(audio, { headers: { "content-type": "audio/mpeg", "cache-control": "no-store" } });
 });
+
+export const GET = route(async (req: Request) => {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  if (tooManyAttempts(`tts:${ip}`, 120, 10 * 60_000)) return fail("Too many requests. Try again in a few minutes.", 429);
+  const q = new URL(req.url).searchParams;
+  const text = (q.get("text") ?? "").trim().slice(0, 1200);
+  if (!text) return fail("No text.", 422);
+  const voiceId = q.get("voiceId");
+  const voice = voiceId && isKnownVoice(voiceId) ? voiceId : env.defaultVoice;
+  const cached = cache.get(`${voice}:${text}`);
+  if (cached) return new Response(cached, { headers: { "content-type": "audio/mpeg", "cache-control": "no-store" } });
+  const res = await tts(text, voice);
+  return new Response(res.body, { headers: { "content-type": "audio/mpeg", "cache-control": "no-store" } });
+});

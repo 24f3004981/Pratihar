@@ -69,7 +69,7 @@ export function useVoice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finishRecording = async (transcribe: boolean): Promise<string> => {
+  const finishRecording = async (transcribe: boolean, lang?: string): Promise<string> => {
     const r = rec.current;
     if (!r) return "";
     const done = new Promise<void>((res) => (r.onstop = () => res()));
@@ -82,6 +82,7 @@ export function useVoice() {
     const blob = new Blob(chunks.current, { type: r.mimeType || "audio/webm" });
     const form = new FormData();
     form.append("audio", blob, "speech.webm");
+    if (lang) form.append("lang", lang);
     const res = await fetch("/api/stt", { method: "POST", body: form });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error ?? "Couldn't understand that.");
@@ -95,8 +96,8 @@ export function useVoice() {
    * Hands-free: listen until the person speaks and then pauses. Resolves "" if nobody spoke
    * (so the caller can just listen again) or if `stopListening()` was called.
    */
-  const listen = useCallback(async (opts: { pauseMs?: number; maxMs?: number; waitMs?: number } = {}): Promise<string> => {
-    const { pauseMs = 1200, maxMs = 20000, waitMs = 9000 } = opts;
+  const listen = useCallback(async (opts: { pauseMs?: number; maxMs?: number; waitMs?: number; lang?: string } = {}): Promise<string> => {
+    const { pauseMs = 850, maxMs = 20000, waitMs = 9000, lang } = opts;
     await start();
     return new Promise<string>((resolve, reject) => {
       const t0 = Date.now();
@@ -122,7 +123,7 @@ export function useVoice() {
         clearInterval(tick);
         cancelListen.current = null;
         try {
-          resolve(await finishRecording(spoke));
+          resolve(await finishRecording(spoke, lang));
         } catch (e) {
           reject(e);
         }
@@ -163,9 +164,8 @@ export function useVoice() {
     const ctx = ensureCtx();
     setSpeaking(true);
     try {
-      const res = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, voiceId }) });
-      if (!res.ok) throw new Error("tts");
-      const url = URL.createObjectURL(await res.blob());
+      // GET streams the audio, so playback starts on the first bytes instead of the whole clip
+      const url = `/api/tts?${new URLSearchParams({ text, ...(voiceId ? { voiceId } : {}) })}`;
       if (!audioEl.current) {
         audioEl.current = new Audio();
         const src = ctx.createMediaElementSource(audioEl.current);
@@ -182,7 +182,6 @@ export function useVoice() {
         el.onerror = () => resolve();
         el.play().catch(() => resolve());
       });
-      URL.revokeObjectURL(url);
     } catch {
       await browserSpeak(text);
     } finally {

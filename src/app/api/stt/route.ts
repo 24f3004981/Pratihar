@@ -9,7 +9,8 @@ export const POST = route(async (req: Request) => {
   const audio = form.get("audio");
   if (!(audio instanceof Blob) || audio.size < 1500) return fail("Didn't catch that. Hold the button a little longer.", 422);
   if (audio.size > 10 * 1024 * 1024) return fail("That recording is too long.", 413);
-  const out = await stt(audio);
+  const lang = form.get("lang");
+  const out = await stt(audio, typeof lang === "string" ? lang : undefined);
   if (!out.text) return fail("Couldn't hear any words. Try again closer to the mic.", 422);
   return ok(out);
 });

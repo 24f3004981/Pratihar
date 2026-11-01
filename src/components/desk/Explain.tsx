@@ -93,7 +93,7 @@ export default function Explain({ data, reload, go }: TabProps) {
       setHeard("");
       let said = "";
       try {
-        said = (await v.listen()).trim();
+        said = (await v.listen({ lang })).trim();
       } catch (e) {
         setErr((e as Error).message);
       }
