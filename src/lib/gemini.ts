@@ -5,9 +5,9 @@ import { env, need } from "./env";
 // Extraction, judging and phone replies need speed more than deep reasoning; a caller won't wait 60 seconds.
 const FAST = { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } };
 
-// If the chosen model is busy or retired, try these in order. All are on the key's model list and
-// answered a receptionist-style prompt in under 3 s when timed (scripts/time-models.ts).
-const FALLBACKS = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
+// If the chosen model is slow, busy or retired, these are hedged in this order. All answered
+// a receptionist-style prompt when timed (scripts/time-models.ts); quotas and load change daily.
+const FALLBACKS = ["gemini-3-flash-preview", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.7-flash"];
 
 let client: GoogleGenAI | null = null;
 export function gemini(): GoogleGenAI {
@@ -28,27 +28,52 @@ const statusOf = (e: unknown) => {
 // every request; a caller on the line shouldn't pay for the same refusal ten times.
 const coolUntil = new Map<string, number>();
 
-/** generateContent on the first model that isn't cooling down; on 429/500/503/404 move to the next. */
+/**
+ * generateContent with hedging: start the first ready model, and if it hasn't answered in
+ * HEDGE_MS (or it refuses), start the next one too. The first good answer wins. Models that
+ * refuse with 429/503/404 cool down so later requests skip them.
+ */
+const HEDGE_MS = 3500;
+const MAX_MS = 20000;
 async function generate(contents: Content[] | string, config: GenerateContentConfig): Promise<GenerateContentResponse> {
   const all = [env.geminiModel, ...FALLBACKS.filter((m) => m !== env.geminiModel)];
   const now = Date.now();
   const ready = all.filter((m) => (coolUntil.get(m) ?? 0) < now);
   const models = ready.length ? ready : all;
+  const stop = new AbortController();
   let last: unknown;
-  for (const model of models) {
-    try {
-      // a stuck model must not hold a live conversation: give up after 6 s and try the next one
-      return await gemini().models.generateContent({ model, contents, config: { ...FAST, abortSignal: AbortSignal.timeout(6000), ...config } });
-    } catch (e) {
-      last = e;
-      const s = (e as Error)?.name === "AbortError" || (e as Error)?.name === "TimeoutError" ? 503 : statusOf(e);
-      if (![404, 429, 500, 503].includes(s)) throw e;
-      coolUntil.set(model, Date.now() + (s === 404 ? 3_600_000 : s === 429 ? 600_000 : 30_000));
-      console.warn(`[gemini] ${model} returned ${s}; using the next model`);
-    }
-  }
-  console.warn("[gemini] every model busy:", (last as Error)?.message?.slice(0, 160));
-  throw new AiBusy("Pratihar's AI is busy right now. Please try again in a minute.");
+  return new Promise<GenerateContentResponse>((resolve, reject) => {
+    let next = 0, running = 0, done = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => { done = true; clearTimeout(timer); stop.abort(); };
+    const launch = () => {
+      if (done) return;
+      clearTimeout(timer);
+      if (next >= models.length) {
+        if (!running) { finish(); console.warn("[gemini] every model busy:", (last as Error)?.message?.slice(0, 160)); reject(new AiBusy("Pratihar's AI is busy right now. Please try again in a minute.")); }
+        return;
+      }
+      const model = models[next++];
+      running++;
+      timer = setTimeout(launch, HEDGE_MS);
+      const signal = AbortSignal.any([stop.signal, AbortSignal.timeout(MAX_MS)]);
+      gemini().models.generateContent({ model, contents, config: { ...FAST, abortSignal: signal, ...config } }).then(
+        (r) => { running--; if (!done) { finish(); resolve(r); } },
+        (e) => {
+          running--;
+          if (done) return;
+          last = e;
+          const timedOut = (e as Error)?.name === "AbortError" || (e as Error)?.name === "TimeoutError";
+          const s = timedOut ? 503 : statusOf(e);
+          if (![404, 429, 500, 503].includes(s)) { finish(); reject(e); return; }
+          if (!timedOut) coolUntil.set(model, Date.now() + (s === 404 ? 3_600_000 : s === 429 ? 600_000 : 30_000));
+          console.warn(`[gemini] ${model} returned ${s}; trying the next model`);
+          launch();
+        },
+      );
+    };
+    launch();
+  });
 }
 
 function stripFence(s: string) {
