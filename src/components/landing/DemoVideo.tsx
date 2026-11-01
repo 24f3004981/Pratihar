@@ -11,9 +11,9 @@ export function DemoVideo() {
   return (
     <section id="how" style={{ background: "#1b2430", color: "#fff", scrollMarginTop: 64 }}>
       <div className="container" style={{ padding: "80px 24px" }}>
-        <h2 style={{ color: "#fff" }}>{t("See Pratihar in 60 seconds", "60 सेकंड में प्रतिहार देखिए")}</h2>
+        <h2 style={{ color: "#fff" }}>{t("See Pratihar at work", "प्रतिहार को काम करते देखिए")}</h2>
         <p style={{ color: "#aab4c0", marginTop: 10 }}>
-          {t("One evening at a dental clinic: the setup, the practice calls, a real booking and the owner's nightly brief.", "एक डेंटल क्लिनिक की एक शाम: सेटअप, अभ्यास कॉल, एक असली बुकिंग और मालिक का रात का ब्रीफ़।")}
+          {t("One dental clinic, start to finish: setup by talking, 24 practice calls, a real Hinglish booking, an urgent call handed to the doctor, the callback list and the evening brief.", "एक डेंटल क्लिनिक, शुरू से अंत तक: बात करके सेटअप, 24 अभ्यास कॉल, हिंग्लिश में असली बुकिंग, डॉक्टर तक पहुँची ज़रूरी कॉल, कॉल बैक लिस्ट और शाम का ब्रीफ़।")}
         </p>
         <div className="row" style={{ marginTop: 20, gap: 8 }}>
           {(["en", "hi"] as const).map((l) => (
