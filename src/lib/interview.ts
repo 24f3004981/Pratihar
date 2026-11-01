@@ -27,7 +27,7 @@ Rules: ask one thing per turn and keep it to one or two short sentences, because
 Return JSON {"reply": string, "done": boolean}.`,
     prompt: history.length
       ? `Conversation so far:\n${history.map((t) => `${t.role === "owner" ? "Owner" : "Pratihar"}: ${t.text}`).join("\n")}\n\nYour next turn:`
-      : "Start the interview. Greet them warmly in one line and ask the first question.",
+      : `Start the interview. Greet them warmly in one line and ask the first question. ${SPEAK[lang]}`,
     schema: Next,
     temperature: 0.5,
   });
