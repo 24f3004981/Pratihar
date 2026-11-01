@@ -3,7 +3,7 @@ import { Icon } from "@/components/Icon";
 import { useT } from "@/components/lang";
 import { PhoneMock } from "@/components/landing/PhoneMock";
 import { AfterTheCall, PracticeDemo, StartCTA, Steps, Trust } from "@/components/landing/Sections";
-import { Walkthrough } from "@/components/landing/Walkthrough";
+import { DemoVideo } from "@/components/landing/DemoVideo";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export default function Home() {
@@ -38,7 +38,7 @@ export default function Home() {
           <PhoneMock />
         </section>
 
-        <Walkthrough />
+        <DemoVideo />
         <Steps />
         <PracticeDemo />
         <AfterTheCall />
